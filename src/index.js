@@ -14,7 +14,7 @@ function checksExistsUserAccount(request, response, next) {
   const usernameAlreadyExists = users.find((user) => user.username === username);
 
   if (usernameAlreadyExists) {
-    request.user = username;
+    request.user = usernameAlreadyExists;
     return next();
   }
 
@@ -36,13 +36,26 @@ function checksTodoExists(request, response, next) {
   const { id } = request.params;
 
   const usernameExists = users.find((user) => user.username === username);
-  const isIdValid = uuidv4.validate(id);
-  const todoIndex = username.todos.indexOf(id);
+
+  if (!usernameExists) {
+    return response.status(404).json({ error: "User not found" });
+  }
+
+  const isIdValid = validate(id);
+  const todoIndex = usernameExists.todos.findIndex(todo => todo.id === id);
 
   if (usernameExists && isIdValid && todoIndex >= 0) {
-    request.user = username;
-    request.todo = users[usernameExists].todos[todoIndex];
+    request.user = usernameExists;
+    request.todo = usernameExists.todos[todoIndex];
     return next();
+  }
+
+  if (!isIdValid) {
+    return response.status(400).json({ error: "Todo id is not valid" });
+  }
+
+  if (todoIndex < 0) {
+    return response.status(404).json({ error: "Todo not found" });
   }
 }
 
@@ -52,9 +65,11 @@ function findUserById(request, response, next) {
   const userIdExists = users.find((user) => user.id === id);
 
   if (userIdExists) {
-    request.user = id;
+    request.user = userIdExists;
     return next();
   }
+
+  return response.status(404).json({ error: "User not found" });
 }
 
 app.post('/users', (request, response) => {
