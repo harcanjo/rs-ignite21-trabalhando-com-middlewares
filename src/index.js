@@ -27,6 +27,8 @@ function checksCreateTodosUserAvailability(request, response, next) {
   if ((user.pro === false && user.todos.length < 10) || user.pro === true) {
     return next();
   }
+
+  return response.status(403).json({ error: "User cannot create more todos" });
 }
 
 function checksTodoExists(request, response, next) {
